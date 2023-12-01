@@ -53,21 +53,26 @@ class CompleteStudent extends Person implements Record {
 }
 
 public class Main {
+
     public static void main(String[] args) {
-        String pathToNameFile = "NameFile.txt"; 
-        String pathToCourseFile = "CourseFile.txt"; 
+        String pathToNameFile = "NameFile.txt";
+        String pathToCourseFile = "CourseFile.txt";
+        String pathToErrorLogFile = "ErrorLog.txt";
+        String pathToResultsFile = "Results.txt";
 
-        Map<String, Student> students = readNameFile(pathToNameFile);
-        Map<String, Course> courses = readCourseFile(pathToCourseFile);
+        try (PrintWriter errorWriter = new PrintWriter(new FileWriter(pathToErrorLogFile, false));
+             PrintWriter writer = new PrintWriter(new FileWriter(pathToResultsFile, false))) {
 
-        if (students.isEmpty() || courses.isEmpty()) {
-            System.err.println("Error: No valid student or course data found.");
-            return;
-        }
+            Map<String, Student> students = readNameFile(pathToNameFile, errorWriter);
+            Map<String, List<Course>> courses = readCourseFile(pathToCourseFile, errorWriter);
 
-        Map<String, CompleteStudent> completeStudents = matchKeys(students, courses);
+            if (students.isEmpty() || courses.isEmpty()) {
+                System.err.println("Error: No valid student or course data found.");
+                return;
+            }
 
-        try (PrintWriter writer = new PrintWriter("Results.txt")) {
+            Map<String, CompleteStudent> completeStudents = matchKeys(students, courses, errorWriter);
+
             for (String id : completeStudents.keySet()) {
                 CompleteStudent student = completeStudents.get(id);
                 writer.println("ID: " + student.id + ", Name: " + student.name);
@@ -75,38 +80,70 @@ public class Main {
                     writer.println("  Course: " + courseCode + ", Grade: " + student.courses.get(courseCode));
                 }
             }
+
         } catch (IOException e) {
             e.printStackTrace();
+            System.err.println("Error initializing files: " + e.getMessage());
         }
     }
 
-    static Map<String, Student> readNameFile(String filePath) {
+
+    static Map<String, Student> readNameFile(String filePath, PrintWriter errorWriter) {
         Map<String, Student> students = new HashMap<>();
+        int lineNumber = 0;
+
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
-                String[] parts = line.split(", ");
-                if (parts.length != 2) {
-                    System.err.println("Invalid format in Name file: " + line);
-                    continue;
+                lineNumber++;
+                try {
+                    String[] parts = line.split(", ");
+                    if (parts.length != 2) {
+                        throw new IllegalArgumentException("Incorrect number of fields");
+                    }
+                    String studentId = parts[0].trim();
+                    String studentName = parts[1].trim();
+
+                    if (!isValidStudentId(studentId)) {
+                        throw new IllegalArgumentException("Invalid Student ID format");
+                    }
+                    if (!isValidName(studentName)) {
+                        throw new IllegalArgumentException("Name must include first name and surname");
+                    }
+
+                    students.put(studentId, new Student(studentId, studentName));
+                } catch (IllegalArgumentException e) {
+                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": " + e.getMessage() + " on line: " + line);
                 }
-                students.put(parts[0], new Student(parts[0], parts[1]));
             }
         } catch (IOException e) {
-            System.err.println("Error reading Name file: " + e.getMessage());
+            errorWriter.println("Error reading file '" + filePath + "': " + e.getMessage());
         }
         return students;
     }
 
-    static Map<String, Course> readCourseFile(String filePath) {
-        Map<String, Course> courses = new HashMap<>();
+    static boolean isValidName(String name) {
+        String[] parts = name.split("\\s+");
+        return parts.length >= 2; // Checks if the name has at least two parts
+    }
+
+    static Map<String, List<Course>> readCourseFile(String filePath, PrintWriter errorWriter) {
+        Map<String, List<Course>> courses = new HashMap<>();
+        int lineNumber = 0; // Line number counter
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
             String line;
             while ((line = br.readLine()) != null) {
+                lineNumber++; // Increment line number
                 String[] parts = line.split(", ");
                 if (parts.length != 6) {
-                    System.err.println("Invalid format in Course file: " + line);
-                    continue;
+                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Incorrect number of fields on line: " + line);
+                    continue; // Skip processing this line
+                } else if (!isValidStudentId(parts[0])) {
+                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Invalid Student ID format on line: " + line);
+                    continue; // Skip processing this line
+                } else if (!isValidCourseId(parts[1])) {
+                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Invalid Course ID format on line: " + line);
+                    continue; // Skip processing this line
                 }
                 try {
                     int finalGrade = calculateFinalGrade(
@@ -114,13 +151,15 @@ public class Main {
                         Integer.parseInt(parts[3]),
                         Integer.parseInt(parts[4]),
                         Integer.parseInt(parts[5]));
-                    courses.put(parts[0], new Course(parts[0], parts[1], finalGrade));
+                    Course course = new Course(parts[0], parts[1], finalGrade);
+
+                    courses.computeIfAbsent(parts[0], k -> new ArrayList<>()).add(course);
                 } catch (NumberFormatException e) {
-                    System.err.println("Number format error in Course file: " + line);
+                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Error processing line - " + e.getMessage() + " on line: " + line);
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading Course file: " + e.getMessage());
+            errorWriter.println("Error reading file '" + filePath + "': " + e.getMessage());
         }
         return courses;
     }
@@ -129,17 +168,35 @@ public class Main {
         return (int) (test1 * 0.2 + test2 * 0.2 + test3 * 0.2 + finalExam * 0.4);
     }
 
-    static Map<String, CompleteStudent> matchKeys(Map<String, Student> students, Map<String, Course> courses) {
+    static Map<String, CompleteStudent> matchKeys(Map<String, Student> students, Map<String, List<Course>> courses, PrintWriter errorWriter) {
         Map<String, CompleteStudent> completeStudents = new HashMap<>();
-        for (String id : students.keySet()) {
-            if (courses.containsKey(id)) {
-                Student student = students.get(id);
-                Course course = courses.get(id);
-                CompleteStudent completeStudent = new CompleteStudent(student.id, student.name);
-                completeStudent.addRecord(course.courseCode, course.finalGrade);
-                completeStudents.put(id, completeStudent);
+        for (Map.Entry<String, List<Course>> entry : courses.entrySet()) {
+            String studentId = entry.getKey();
+            List<Course> courseList = entry.getValue();
+
+            if (!isValidStudentId(studentId)) {
+                errorWriter.println("Error: Invalid Student ID format on line: " + studentId);
+            } else if (!students.containsKey(studentId)) {
+                errorWriter.println("Error: Student ID " + studentId + " not found in student records.");
+            } else {
+                Student student = students.get(studentId);
+                CompleteStudent completeStudent = completeStudents.computeIfAbsent(studentId, k -> new CompleteStudent(student.id, student.name));
+
+                for (Course course : courseList) {
+                    completeStudent.addRecord(course.courseCode, course.finalGrade);
+                }
             }
         }
         return completeStudents;
     }
+
+
+    static boolean isValidStudentId(String id) {
+        return id.matches("\\d{9}"); // Regex for exactly 8 digits
+    }
+
+    static boolean isValidCourseId(String courseId) {
+        return courseId.matches("[A-Za-z]{2}\\d{3}"); // Regex for two letters followed by three digits
+    }
+
 }
