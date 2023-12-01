@@ -47,15 +47,23 @@ public class Main {
         Map<String, Student> students = readNameFile(pathToNameFile);
         Map<String, Course> courses = readCourseFile(pathToCourseFile);
 
+        if (students.isEmpty() || courses.isEmpty()) {
+            System.err.println("Error: No valid student or course data found.");
+            return;
+        }
+
         Map<String, CompleteStudent> completeStudents = matchKeys(students, courses);
 
-        // For demonstration: Print out the merged information
-        for (String id : completeStudents.keySet()) {
-            CompleteStudent student = completeStudents.get(id);
-            System.out.println("ID: " + student.id + ", Name: " + student.name);
-            for (String courseCode : student.courses.keySet()) {
-                System.out.println("  Course: " + courseCode + ", Grade: " + student.courses.get(courseCode));
+        try (PrintWriter writer = new PrintWriter("Results.txt")) {
+            for (String id : completeStudents.keySet()) {
+                CompleteStudent student = completeStudents.get(id);
+                writer.println("ID: " + student.id + ", Name: " + student.name);
+                for (String courseCode : student.courses.keySet()) {
+                    writer.println("  Course: " + courseCode + ", Grade: " + student.courses.get(courseCode));
+                }
             }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -65,12 +73,14 @@ public class Main {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(", ");
-                if (parts.length == 2) {
-                    students.put(parts[0], new Student(parts[0], parts[1]));
+                if (parts.length != 2) {
+                    System.err.println("Invalid format in Name file: " + line);
+                    continue;
                 }
+                students.put(parts[0], new Student(parts[0], parts[1]));
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error reading Name file: " + e.getMessage());
         }
         return students;
     }
@@ -81,14 +91,23 @@ public class Main {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split(", ");
-                if (parts.length == 6) {
-                    int finalGrade = calculateFinalGrade(Integer.parseInt(parts[2]), Integer.parseInt(parts[3]), 
-                                                         Integer.parseInt(parts[4]), Integer.parseInt(parts[5]));
+                if (parts.length != 6) {
+                    System.err.println("Invalid format in Course file: " + line);
+                    continue;
+                }
+                try {
+                    int finalGrade = calculateFinalGrade(
+                        Integer.parseInt(parts[2]),
+                        Integer.parseInt(parts[3]),
+                        Integer.parseInt(parts[4]),
+                        Integer.parseInt(parts[5]));
                     courses.put(parts[0], new Course(parts[0], parts[1], finalGrade));
+                } catch (NumberFormatException e) {
+                    System.err.println("Number format error in Course file: " + line);
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error reading Course file: " + e.getMessage());
         }
         return courses;
     }
