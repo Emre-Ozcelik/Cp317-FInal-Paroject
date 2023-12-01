@@ -1,17 +1,27 @@
 import java.io.*;
 import java.util.*;
 
-class Student {
+abstract class Person {
     String id;
     String name;
 
-    public Student(String id, String name) {
+    public Person(String id, String name) {
         this.id = id;
         this.name = name;
     }
 }
 
-class Course {
+class Student extends Person {
+    public Student(String id, String name) {
+        super(id, name);
+    }
+}
+
+interface Record {
+    void addRecord(String key, int value);
+}
+
+class Course implements Record {
     String id;
     String courseCode;
     int finalGrade;
@@ -21,20 +31,23 @@ class Course {
         this.courseCode = courseCode;
         this.finalGrade = finalGrade;
     }
+
+    @Override
+    public void addRecord(String key, int value) {
+        // Implementation for adding a record
+    }
 }
 
-class CompleteStudent {
-    String id;
-    String name;
-    Map<String, Integer> courses; 
+class CompleteStudent extends Person implements Record {
+    Map<String, Integer> courses;
 
     public CompleteStudent(String id, String name) {
-        this.id = id;
-        this.name = name;
+        super(id, name);
         this.courses = new HashMap<>();
     }
 
-    public void addCourse(String courseCode, int finalGrade) {
+    @Override
+    public void addRecord(String courseCode, int finalGrade) {
         courses.put(courseCode, finalGrade);
     }
 }
@@ -123,7 +136,7 @@ public class Main {
                 Student student = students.get(id);
                 Course course = courses.get(id);
                 CompleteStudent completeStudent = new CompleteStudent(student.id, student.name);
-                completeStudent.addCourse(course.courseCode, course.finalGrade);
+                completeStudent.addRecord(course.courseCode, course.finalGrade);
                 completeStudents.put(id, completeStudent);
             }
         }
