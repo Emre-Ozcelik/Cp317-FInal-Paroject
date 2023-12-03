@@ -1,0 +1,3 @@
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/NameFile.txt' at line 9: Incorrect number of fields 1 on line: dasdas
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 7: Incorrect number of fields on line: 
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 10: Incorrect number of fields on line: dsadas
