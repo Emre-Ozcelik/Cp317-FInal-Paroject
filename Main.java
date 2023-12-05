@@ -1,13 +1,14 @@
 import java.io.*;
 import java.util.*;
 
-abstract class Person {
+abstract class Person { //encapsulation
     String id;
     String name;
 
     public Person(String id, String name) {
         this.id = id;
         this.name = name;
+        //inheritance
     }
 }
 
@@ -17,11 +18,11 @@ class Student extends Person {
     }
 }
 
-interface Record {
+interface Record { //abstraction
     void addRecord(String key, int value);
 }
 
-class Course implements Record {
+class Course implements Record { // polymorphosm 
     String id;
     String courseCode;
     int finalGrade;
@@ -60,6 +61,10 @@ public class Main {
         String pathToErrorLogFile = "ErrorLog.txt";
         String pathToResultsFile = "Results.txt";
 
+        processFiles(pathToNameFile, pathToCourseFile, pathToErrorLogFile, pathToResultsFile);
+    }
+
+    public static void processFiles(String pathToNameFile, String pathToCourseFile, String pathToErrorLogFile, String pathToResultsFile) {
         try (PrintWriter errorWriter = new PrintWriter(new FileWriter(pathToErrorLogFile, false));
              PrintWriter writer = new PrintWriter(new FileWriter(pathToResultsFile, false))) {
 
@@ -81,12 +86,10 @@ public class Main {
                 }
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             System.err.println("Error initializing files: " + e.getMessage());
         }
     }
-
 
     static Map<String, Student> readNameFile(String filePath, PrintWriter errorWriter) {
         Map<String, Student> students = new HashMap<>();
@@ -99,7 +102,7 @@ public class Main {
                 try {
                     String[] parts = line.split(", ");
                     if (parts.length != 2) {
-                        throw new IllegalArgumentException("Incorrect number of fields");
+                        throw new IllegalArgumentException("Incorrect number of fields " + parts.length);
                     }
                     String studentId = parts[0].trim();
                     String studentName = parts[1].trim();
@@ -116,7 +119,7 @@ public class Main {
                     errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": " + e.getMessage() + " on line: " + line);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             errorWriter.println("Error reading file '" + filePath + "': " + e.getMessage());
         }
         return students;
@@ -138,27 +141,22 @@ public class Main {
                 if (parts.length != 6) {
                     errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Incorrect number of fields on line: " + line);
                     continue; // Skip processing this line
-                } else if (!isValidStudentId(parts[0])) {
-                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Invalid Student ID format on line: " + line);
-                    continue; // Skip processing this line
-                } else if (!isValidCourseId(parts[1])) {
-                    errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Invalid Course ID format on line: " + line);
-                    continue; // Skip processing this line
                 }
+                String studentId = parts[0].trim();
+                String courseCode = parts[1].trim();
                 try {
                     int finalGrade = calculateFinalGrade(
-                        Integer.parseInt(parts[2]),
-                        Integer.parseInt(parts[3]),
-                        Integer.parseInt(parts[4]),
-                        Integer.parseInt(parts[5]));
-                    Course course = new Course(parts[0], parts[1], finalGrade);
-
-                    courses.computeIfAbsent(parts[0], k -> new ArrayList<>()).add(course);
+                        Integer.parseInt(parts[2].trim()),
+                        Integer.parseInt(parts[3].trim()),
+                        Integer.parseInt(parts[4].trim()),
+                        Integer.parseInt(parts[5].trim()));
+                    Course course = new Course(studentId, courseCode, finalGrade);
+                    courses.computeIfAbsent(studentId, k -> new ArrayList<>()).add(course);
                 } catch (NumberFormatException e) {
                     errorWriter.println("Error in file '" + filePath + "' at line " + lineNumber + ": Error processing line - " + e.getMessage() + " on line: " + line);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             errorWriter.println("Error reading file '" + filePath + "': " + e.getMessage());
         }
         return courses;
@@ -190,9 +188,8 @@ public class Main {
         return completeStudents;
     }
 
-
     static boolean isValidStudentId(String id) {
-        return id.matches("\\d{9}"); // Regex for exactly 8 digits
+        return id.matches("\\d{9}"); // Regex for exactly 9 digits
     }
 
     static boolean isValidCourseId(String courseId) {
