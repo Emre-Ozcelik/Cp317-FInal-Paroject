@@ -1,13 +1,14 @@
 import java.io.*;
 import java.util.*;
 
-abstract class Person {
+abstract class Person { //encapsulation
     String id;
     String name;
 
     public Person(String id, String name) {
         this.id = id;
         this.name = name;
+        //inheritance
     }
 }
 
@@ -17,11 +18,11 @@ class Student extends Person {
     }
 }
 
-interface Record {
+interface Record { //abstraction
     void addRecord(String key, int value);
 }
 
-class Course implements Record {
+class Course implements Record { // polymorphosm 
     String id;
     String courseCode;
     int finalGrade;

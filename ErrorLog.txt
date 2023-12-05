@@ -1,3 +1,4 @@
-Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/NameFile.txt' at line 9: Incorrect number of fields 1 on line: dasdas
-Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 7: Incorrect number of fields on line: 
-Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 10: Incorrect number of fields on line: dsadas
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 2: Incorrect number of fields on line: 150295440, BI111 75 95 83 67
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 3: Incorrect number of fields on line: 362937206, PS263 92 90 50 89
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 4: Incorrect number of fields on line: 423091466, PS262 89 56 66 54
+Error in file '/Users/emre/Desktop/Cp317-FInal-Paroject/CourseFile.txt' at line 5: Incorrect number of fields on line: 580228531, CP372 86 64 65 59
